@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {DatacoordinatorService} from '../../datacoordinator.service';
-import {NgModel} from '@angular/forms';
+import {NgForm, NgModel} from '@angular/forms';
 import { Post } from 'src/app/post.model';
 
 @Component({
@@ -16,14 +16,18 @@ export class PostCreateComponent implements OnInit {
   enteredTitle = '';
   enteredContent = '';
 
-  onAddPost() {
+  onAddPost(form: NgForm) {
     const post:Post = {
-      title: this.enteredTitle,
-      content: this.enteredContent,
+      title: form.value.title,
+      content: form.value.content,
     };
-    console.log(post.title + post.content);
-    console.log('before emit');
-    this.dataCoordinatorService.postCreated.emit(post);
+    // console.log(post.title + post.content);
+    // console.log('before emit');
+    //this.dataCoordinatorService.postCreated.emit(post);
+    console.log('before service'+post.content);
+    this.dataCoordinatorService.addPost(post);
+
+    form.resetForm();
 
   }
 }

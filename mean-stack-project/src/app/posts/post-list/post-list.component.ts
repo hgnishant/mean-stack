@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
+
 import { Post } from 'src/app/post.model';
 import { DatacoordinatorService } from '../../datacoordinator.service';
 
@@ -7,23 +9,26 @@ import { DatacoordinatorService } from '../../datacoordinator.service';
   templateUrl: './post-list.component.html',
   styleUrls: ['./post-list.component.css'],
 })
-export class PostListComponent implements OnInit {
-
-  posts : Post[] = [];
+export class PostListComponent implements OnInit, OnDestroy {
+  posts: Post[] = [];
+  postSubs: Subscription;
 
   constructor(private dataCoordinatorService: DatacoordinatorService) {
-    this.dataCoordinatorService.postCreated.subscribe(
-      (postCreated: { title: string; content: string }) => {
-        console.log('posts'+postCreated.title + ' '+postCreated.content);
-        this.posts.push(postCreated);
-      }
-    );
+    // this.dataCoordinatorService.postCreated.subscribe(
+    //   (postCreated: { title: string; content: string }) => {
+    //     console.log('posts'+postCreated.title + ' '+postCreated.content);
+    //     this.posts.push(postCreated);
+    //   }
+    // );
   }
 
-  
-
   ngOnInit(): void {
-   
+    this.posts = this.dataCoordinatorService.getPosts();
+    this.postSubs = this.dataCoordinatorService
+      .getPostUpdateListener()
+      .subscribe((postData: Post[]) => {
+        this.posts = postData;
+      });
   }
 
   // posts = [
@@ -31,4 +36,8 @@ export class PostListComponent implements OnInit {
   //   {title:"Second Content",content : "This is Second"},
   //   {title:"Third Content",content : "This is Third"}
   // ];
+
+  ngOnDestroy() {
+    this.postSubs.unsubscribe();
+  }
 }
