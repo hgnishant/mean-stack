@@ -62,10 +62,13 @@ app.post("/api/posts", (req, res, next) => {
     content: req.body.content,
   });
   console.log(post);
-  post.save();//save method provided by mongoose on it's model will automatically create a collection with name "posts"
-  res.status(201).json({
-    message: "Post added successfully.",
-  });
+  post.save().then(postCreated=>{
+    res.status(201).json({
+        message: "Post added successfully.",
+        postID : postCreated._id
+      });
+  });//save method provided by mongoose on it's model will automatically create a collection with name "posts"
+ 
 });
 
 //first param is the default route for us. we can pass as many arguments as required but last has to be (req,res,next) only
@@ -93,4 +96,15 @@ app.get("/api/posts", (req, res, next) => {
   });
  
 });
+
+app.delete("/api/posts/:id",(req,res,next)=>{
+    Post.deleteOne({_id:req.params.id}).then(res=>{
+        console.log('data deleted from DB');
+    });
+    res.status(200).json({
+        message:'post deleted successfully in mongoDB'
+    });
+});
+
+
 module.exports = app;

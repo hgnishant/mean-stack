@@ -37,6 +37,11 @@ export class PostListComponent implements OnInit, OnDestroy {
   //   {title:"Third Content",content : "This is Third"}
   // ];
 
+  onDeletePost(postID:string){
+    console.log('post to be dleted = '+postID);
+    this.dataCoordinatorService.deletePost(postID);
+  }
+
   ngOnDestroy() {
     this.postSubs.unsubscribe();
   }
