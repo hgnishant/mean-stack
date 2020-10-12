@@ -22,7 +22,7 @@ export class DatacoordinatorService {
       )
       .subscribe((postData) => {
         this.Posts = postData.posts;
-      //  console.log('data from sevrer = '+this.Posts);
+        //  console.log('data from sevrer = '+this.Posts);
         this.postsUpdated.next([...this.Posts]);
       });
     // return [...this.Posts];
@@ -33,7 +33,12 @@ export class DatacoordinatorService {
   }
 
   addPost(post: Post) {
-    this.Posts.push(post);
-    this.postsUpdated.next([...this.Posts]);
+    this.http
+      .post<{ message: string }>('http://localhost:3000/api/posts', post)
+      .subscribe((resData) => {
+        console.log('post to service ' + resData.message);
+        this.Posts.push(post);
+        this.postsUpdated.next([...this.Posts]);
+      });
   }
 }
