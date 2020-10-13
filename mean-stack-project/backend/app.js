@@ -21,8 +21,9 @@
 const express = require("express");
 const bodyParser = require("body-parser"); //required to prase the request body
 
-const Post = require("./models/post");
+
 const mongoose = require("mongoose");
+const postsRoutes = require("./routes/posts");
 
 const app = express();
 
@@ -38,10 +39,10 @@ mongoose
     console.log("database conenction failed");
   });
 
+  
 app.use(bodyParser.json()); //this will parse the request body
 app.use(bodyParser.urlencoded({ extended: false })); //only for demo
-
-//add a middleware to set headers for CORS:
+  //add a middleware to set headers for CORS:
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*"); //* means for all
   res.setHeader(
@@ -50,61 +51,13 @@ app.use((req, res, next) => {
   ); //allow the header types u need
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET,PUT,POST,PATCH,DELETE,POST"
+    "GET,PUT,POST,PATCH,DELETE,OPTIONS"
   );
   next(); //now pass on to next middleware
 });
 
-app.post("/api/posts", (req, res, next) => {
-  // const post = req.body; //body added by bodyParser
-  const post = new Post({
-    title: req.body.title,
-    content: req.body.content,
-  });
-  console.log(post);
-  post.save().then(postCreated=>{
-    res.status(201).json({
-        message: "Post added successfully.",
-        postID : postCreated._id
-      });
-  });//save method provided by mongoose on it's model will automatically create a collection with name "posts"
- 
-});
-
-//first param is the default route for us. we can pass as many arguments as required but last has to be (req,res,next) only
-app.get("/api/posts", (req, res, next) => {
-//   const posts = [
-//     {
-//       id: "fdywbedi",
-//       title: "Server Post 1",
-//       content: "Server side post 1",
-//     },
-//     {
-//       id: "vnjvnejk",
-//       title: "Server Post 2",
-//       content: "Server side post 2",
-//     },
-//   ];
-  //res.json(posts); u can send this or more complcated structures as shown below:
-  //return statment is not required as this being the last response, will be sent to the server
-  Post.find().then(documents=>{
-      console.log(documents);
-      res.status(200).json({
-        message: "posts fetched successfully",
-        posts: documents,
-      });
-  });
- 
-});
-
-app.delete("/api/posts/:id",(req,res,next)=>{
-    Post.deleteOne({_id:req.params.id}).then(res=>{
-        console.log('data deleted from DB');
-    });
-    res.status(200).json({
-        message:'post deleted successfully in mongoDB'
-    });
-});
+  //posts are filtered going to postsRoutes
+app.use("/api/posts",postsRoutes);
 
 
 module.exports = app;

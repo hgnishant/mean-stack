@@ -12,6 +12,7 @@ import { DatacoordinatorService } from '../../datacoordinator.service';
 export class PostListComponent implements OnInit, OnDestroy {
   posts: Post[] = [];
   postSubs: Subscription;
+  isLoading=false;
 
   constructor(private dataCoordinatorService: DatacoordinatorService) {
     // this.dataCoordinatorService.postCreated.subscribe(
@@ -23,11 +24,13 @@ export class PostListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.isLoading=true;
      this.dataCoordinatorService.getPosts();
     this.postSubs = this.dataCoordinatorService
       .getPostUpdateListener()
       .subscribe((postData: Post[]) => {
         this.posts = postData;
+        this.isLoading=false;
       });
   }
 
