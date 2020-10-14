@@ -4,6 +4,7 @@ import { Subject, Subscription } from 'rxjs';
 import { Post } from './post.model';
 import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 
 @Injectable({
   providedIn: 'root',
@@ -43,16 +44,23 @@ export class DatacoordinatorService {
     return this.postsUpdated.asObservable(); //return as an observable but cannot be emitted by whosoever receives it
   }
 
-  addPost(post: Post) {
-    const _post = post;
+  addPost(post: Post,image:File) {
+   // const _post = post;
+   //json data cannot have file/blob data
+   //we need to FormData() which a js object and can contain blob/file data with json
+   const postData = new FormData();
+   postData.append("title",post.title);
+   postData.append("content",post.content);
+   postData.append("image",image,post.title);
     this.http
       .post<{ message: string; postID: string }>(
         'http://localhost:3000/api/posts',
-        _post
+        postData
       )
       .subscribe((resData) => {
-        console.log('post to service ' + resData.message);
-        _post.id = resData.postID;
+      //  console.log('post to service ' + resData.message);
+       // _post.id = resData.postID;
+       const _post:Post = {id:resData.postID,title:post.title,content:post.content}
         this.Posts.push(_post);
         this.postsUpdated.next([...this.Posts]);
         this.router.navigate(["/"]);

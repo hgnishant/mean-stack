@@ -1,10 +1,33 @@
 //routing functionality of express
 const express = require("express");
+const multer = require("multer"); //required to extract image from 
 
 const Post = require("../models/post");
 
 const router = express.Router();
 
+const MIME_TYPE_MAP ={
+  'image/png':'png',
+  'image/jpeg':'jpg',
+  'image/jpg':'jpg',
+}
+
+const storage = multer.diskStorage({
+  destination : (req,file,cb) =>{
+    const isValid = MIME_TYPE_MAP[file.mimetype];
+    let error = new Error("Invalid MIME Type");
+    if(isValid){
+      error=null;
+    }
+    cb(null,"backend/images"); //path is related to server.js file
+  },
+  filename:(req,file,cb) =>{
+    const name = file.originalname.toLowerCase().split(' ').join('-');
+    const ext = MIME_TYPE_MAP[file.mimetype];
+    
+    cb(null,name+'-'+Date.now()+'.'+ext);
+  }
+});
 
 
 
@@ -12,7 +35,7 @@ const router = express.Router();
   
   //router.post("/api/posts", (req, res, next) => { //note that url will be removed and a filter will be used in app.js so that request
   // with only route "/api/posts" are redirected here
-    router.post("", (req, res, next) => {
+    router.post("",multer({storage:storage}).single("image"), (req, res, next) => {
     // const post = req.body; //body added by bodyParser
     const post = new Post({
       title: req.body.title,

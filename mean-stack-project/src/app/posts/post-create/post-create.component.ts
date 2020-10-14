@@ -9,6 +9,7 @@ import {
 } from '@angular/forms';
 import { Post } from 'src/app/post.model';
 import { ActivatedRoute, ParamMap } from '@angular/router';
+import { mimeType } from './mime-type.validator';
 
 @Component({
   selector: 'app-post-create',
@@ -22,6 +23,7 @@ export class PostCreateComponent implements OnInit {
   ) {}
   private mode = 'create';
   private postId: string;
+  imagePreview: string;
   isLoading = false;
   post: Post;
   form: FormGroup;
@@ -29,13 +31,14 @@ export class PostCreateComponent implements OnInit {
   ngOnInit() {
     this.form = new FormGroup({
       title: new FormControl(null, {
-        validators: [Validators.required, Validators.minLength(3)]
+        validators: [Validators.required, Validators.minLength(3)],
       }),
       content: new FormControl(null, { validators: [Validators.required] }),
-      image: new FormControl(null, { validators: [Validators.required] }),
-    }
-    
-    );
+      image: new FormControl(null, {
+        validators: [Validators.required],
+        asyncValidators: [mimeType],
+      }),
+    });
 
     this.route.paramMap.subscribe((paramMap: ParamMap) => {
       if (paramMap.has('postId')) {
@@ -51,7 +54,10 @@ export class PostCreateComponent implements OnInit {
               title: postData.title,
               content: postData.content,
             };
-            this.form.setValue({title:this.post.title,content:this.post.content});
+            this.form.setValue({
+              title: this.post.title,
+              content: this.post.content,
+            });
           });
       } else {
         this.mode = 'create';
@@ -71,11 +77,14 @@ export class PostCreateComponent implements OnInit {
     console.log('onsave');
     this.isLoading = true;
     if (this.mode === 'create') {
-      this.dataCoordinatorService.addPost({
-        id: null,
-        title: this.form.value.title,
-        content: this.form.value.content,
-      });
+      this.dataCoordinatorService.addPost(
+        {
+          id: null,
+          title: this.form.value.title,
+          content: this.form.value.content,
+        },
+        this.form.value.image
+      );
     } else {
       this.dataCoordinatorService.updatePost({
         id: this.postId,
@@ -86,12 +95,16 @@ export class PostCreateComponent implements OnInit {
     this.form.reset();
   }
 
-  onImagePicked(event : Event){
+  onImagePicked(event: Event) {
     const file = (event.target as HTMLInputElement).files[0];
-    this.form.patchValue({image:file});
-    this.form.get('image').updateValueAndValidity();//checks thta fome is valid after adding new item
+    this.form.patchValue({ image: file });
+    this.form.get('image').updateValueAndValidity(); //checks thta form is valid after adding new item
     console.log(file);
-
+    const reader = new FileReader();
+    reader.onload = () => {
+      //async code
+      this.imagePreview = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   }
-
 }
