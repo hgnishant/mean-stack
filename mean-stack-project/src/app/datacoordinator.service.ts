@@ -14,30 +14,36 @@ export class DatacoordinatorService {
   constructor(private http: HttpClient,private router:Router) {}
 
   //postCreated = new EventEmitter<Post>();
-  private postsUpdated = new Subject<Post[]>();
+  private postsUpdated = new Subject<{ posts: Post[]; postCount: number }>();
 
   private Posts: Post[] = [];
 
-  getPosts() {
+  getPosts(pageSize:number,currentPage:number) {
     //get default posts from server
+    const queryParams = `?pagesize=${pageSize}&page=${currentPage}`;
     this.http
-      .get<{ message: string; posts: any }>('http://localhost:3000/api/posts')
+      .get<{ message: string; posts: any,maxPosts:number }>('http://localhost:3000/api/posts'+queryParams)
       .pipe(
-        map((resData) => {
-          return resData.posts.map((_data) => {
-            return {
-              title: _data.title,
-              content: _data.content,
-              id: _data._id,
-              imagePath : _data.imagePath
-            };
-          });
+        map(postData => {
+          return {
+            posts: postData.posts.map(post => {
+              return {
+                title: post.title,
+                content: post.content,
+                id: post._id,
+                imagePath: post.imagePath
+              };
+            }),
+            maxPosts: postData.maxPosts
+          };
         })
       )
-      .subscribe((_postData) => {
-        this.Posts = _postData;
-        //  console.log('data from sevrer = '+this.Posts);
-        this.postsUpdated.next([...this.Posts]);
+      .subscribe(transformedPostData => {
+        this.Posts = transformedPostData.posts;
+        this.postsUpdated.next({
+          posts: [...this.Posts],
+          postCount: transformedPostData.maxPosts
+        });
       });
     // return [...this.Posts];
   }
@@ -59,24 +65,14 @@ export class DatacoordinatorService {
         'http://localhost:3000/api/posts',
         postData
       )
-      .subscribe((resData) => {
-      //  console.log('post to service ' + resData.message);
-       // _post.id = resData.postID;
-       const _post:Post = {id:resData.post.id,title:post.title,content:post.content,imagePath:resData.post.imagePath}
-        this.Posts.push(_post);
-        this.postsUpdated.next([...this.Posts]);
+      .subscribe(responseData => {
         this.router.navigate(["/"]);
       });
   }
 
   deletePost(postID: string) {
-    this.http
-      .delete<{ message: string }>('http://localhost:3000/api/posts/' + postID)
-      .subscribe((resData) => {
-        console.log('data deleted ' + resData.message);
-        this.Posts = this.Posts.filter((post) => post.id !== postID); //return by removing the deleted item
-        this.postsUpdated.next([...this.Posts]);
-      });
+    return this.http
+    .delete("http://localhost:3000/api/posts/" + postID);
   }
 
   getPost(id: string) {
@@ -107,20 +103,10 @@ export class DatacoordinatorService {
     }
 
    // console.log('in service : '+ postData.imagePath);
-    this.http.put<{message:string}>('http://localhost:3000/api/posts/' + post.id,postData).subscribe(resData=>{
-      console.log(resData);
-      const updatedPosts = [...this.Posts];
-      const oldPostIndex = updatedPosts.findIndex(p=>p.id===post.id);
-      const _post:Post = {
-        id:post.id,
-        title:post.title,
-        content:post.content,
-        imagePath : ""
-      }
-      updatedPosts[oldPostIndex]=_post;
-      this.Posts=updatedPosts;
-      this.postsUpdated.next([...this.Posts]);
-      this.router.navigate(["/"]);
-    });
+   this.http
+   .put("http://localhost:3000/api/posts/" + post.id, postData)
+   .subscribe(response => {
+     this.router.navigate(["/"]);
+   });
   }
 }

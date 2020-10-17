@@ -71,14 +71,28 @@ router.get("", (req, res, next) => {
   //   ];
   //res.json(posts); u can send this or more complcated structures as shown below:
   //return statment is not required as this being the last response, will be sent to the server
+  const pageSize = +req.query.pagesize; //get query param
+  const currentPage = +req.query.page;
+  const postQuery = Post.find();
+  let fetchedPosts;
+  if (pageSize && currentPage) {
+    postQuery
+    .skip(pageSize * (currentPage-1))
+    .limit(pageSize);
+  }
   console.log("get req receivved");
-  Post.find().then((documents) => {
-    console.log(documents);
-    res.status(200).json({
-      message: "posts fetched successfully",
-      posts: documents,
+  postQuery
+    .then(documents => {
+      fetchedPosts = documents;
+      return Post.count(); //gives total number of records
+    })
+    .then(count => {
+      res.status(200).json({
+        message: "Posts fetched successfully!",
+        posts: fetchedPosts, //u can;t use documents directly
+        maxPosts: count
+      });
     });
-  });
 });
 
 router.get("/:id", (req, res, next) => {
@@ -94,21 +108,25 @@ router.get("/:id", (req, res, next) => {
 });
 
 //to update use put or patch
-router.put("/:id",multer({ storage: storage }).single("image"), (req, res, next) => {
-  let imagePath = req.body.imagePath;
+router.put(
+  "/:id",
+  multer({ storage: storage }).single("image"),
+  (req, res, next) => {
+    let imagePath = req.body.imagePath;
     if (req.file) {
       const url = req.protocol + "://" + req.get("host");
-      imagePath = url + "/images/" + req.file.filename
+      imagePath = url + "/images/" + req.file.filename;
     }
-  const post = new Post({
-    _id: req.body.id,
-    title: req.body.title,
-    content: req.body.content,
-  });
-  Post.updateOne({ _id: req.params.id }, post).then((result) => {
-    res.status(200).json({ message: "Update successful!" });
-  });
-});
+    const post = new Post({
+      _id: req.body.id,
+      title: req.body.title,
+      content: req.body.content,
+    });
+    Post.updateOne({ _id: req.params.id }, post).then((result) => {
+      res.status(200).json({ message: "Update successful!" });
+    });
+  }
+);
 
 router.delete("/:id", (req, res, next) => {
   Post.deleteOne({ _id: req.params.id }).then((res) => {

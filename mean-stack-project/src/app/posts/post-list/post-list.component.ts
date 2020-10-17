@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
 import { Subscription } from 'rxjs';
 
 import { Post } from 'src/app/post.model';
@@ -13,6 +14,10 @@ export class PostListComponent implements OnInit, OnDestroy {
   posts: Post[] = [];
   postSubs: Subscription;
   isLoading=false;
+  totalPosts=10;
+  postsPerPage =2;
+  pageSizeOptions =[1,2,5,10];
+  currentPage=1;
 
   constructor(private dataCoordinatorService: DatacoordinatorService) {
     // this.dataCoordinatorService.postCreated.subscribe(
@@ -24,13 +29,14 @@ export class PostListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.isLoading=true;
-     this.dataCoordinatorService.getPosts();
+    this.isLoading = true;
+    this.dataCoordinatorService.getPosts(this.postsPerPage, this.currentPage);
     this.postSubs = this.dataCoordinatorService
       .getPostUpdateListener()
-      .subscribe((postData: Post[]) => {
-        this.posts = postData;
-        this.isLoading=false;
+      .subscribe((postData: {posts: Post[], postCount: number}) => {
+        this.isLoading = false;
+        this.totalPosts = postData.postCount;
+        this.posts = postData.posts;
       });
   }
 
@@ -40,12 +46,23 @@ export class PostListComponent implements OnInit, OnDestroy {
   //   {title:"Third Content",content : "This is Third"}
   // ];
 
-  onDeletePost(postID:string){
-    console.log('post to be dleted = '+postID);
-    this.dataCoordinatorService.deletePost(postID);
+  onDeletePost(postId:string){
+   // console.log('post to be dleted = '+postID);
+    this.isLoading = true;
+    this.dataCoordinatorService.deletePost(postId).subscribe(() => {
+      this.dataCoordinatorService.getPosts(this.postsPerPage, this.currentPage);
+    });
   }
 
   ngOnDestroy() {
     this.postSubs.unsubscribe();
   }
+
+  onChangedPage(PageData : PageEvent){
+    this.isLoading=true;
+    this.currentPage = PageData.pageIndex+1;
+    this.postsPerPage = PageData.pageSize;
+    this.dataCoordinatorService.getPosts(this.postsPerPage,this.currentPage);
+  }
+
 }
