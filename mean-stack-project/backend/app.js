@@ -24,6 +24,7 @@ const bodyParser = require("body-parser"); //required to prase the request body
 
 const mongoose = require("mongoose");
 const postsRoutes = require("./routes/posts");
+const path =  require("path");
 
 const app = express();
 
@@ -42,6 +43,7 @@ mongoose
   
 app.use(bodyParser.json()); //this will parse the request body
 app.use(bodyParser.urlencoded({ extended: false })); //only for demo
+app.use("/images",express.static(path.join("backend/images"))); //this MW states that any request that tries to fetch files from image folder should be allowed.
   //add a middleware to set headers for CORS:
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*"); //* means for all

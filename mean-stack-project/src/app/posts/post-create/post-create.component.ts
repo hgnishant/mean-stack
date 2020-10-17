@@ -53,10 +53,12 @@ export class PostCreateComponent implements OnInit {
               id: postData._id,
               title: postData.title,
               content: postData.content,
+              imagePath:postData.imagePath
             };
             this.form.setValue({
               title: this.post.title,
               content: this.post.content,
+              image:this.post.imagePath
             });
           });
       } else {
@@ -82,24 +84,30 @@ export class PostCreateComponent implements OnInit {
           id: null,
           title: this.form.value.title,
           content: this.form.value.content,
+          imagePath:this.form.value.image
         },
         this.form.value.image
       );
     } else {
+      console.log('title before update : '+this.form.value.title);
+      console.log('file name to update : '+this.form.value.image.name);
       this.dataCoordinatorService.updatePost({
         id: this.postId,
         title: this.form.value.title,
         content: this.form.value.content,
+        imagePath:this.form.value.image
       });
     }
     this.form.reset();
   }
 
   onImagePicked(event: Event) {
+    console.log('(event.target as HTMLInputElement).files  '+(event.target as HTMLInputElement).files.length);
     const file = (event.target as HTMLInputElement).files[0];
+    this.form.patchValue({ image: "" });
     this.form.patchValue({ image: file });
-    this.form.get('image').updateValueAndValidity(); //checks thta form is valid after adding new item
-    console.log(file);
+    this.form.get("image").updateValueAndValidity(); //checks thta form is valid after adding new item
+    console.log('file name'+file.name);
     const reader = new FileReader();
     reader.onload = () => {
       //async code

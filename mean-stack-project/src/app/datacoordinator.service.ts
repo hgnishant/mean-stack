@@ -5,6 +5,7 @@ import { Post } from './post.model';
 import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
+import { identifierModuleUrl, InvokeFunctionExpr } from '@angular/compiler';
 
 @Injectable({
   providedIn: 'root',
@@ -28,6 +29,7 @@ export class DatacoordinatorService {
               title: _data.title,
               content: _data.content,
               id: _data._id,
+              imagePath : _data.imagePath
             };
           });
         })
@@ -53,14 +55,14 @@ export class DatacoordinatorService {
    postData.append("content",post.content);
    postData.append("image",image,post.title);
     this.http
-      .post<{ message: string; postID: string }>(
+      .post<{ message: string; post: Post }>(
         'http://localhost:3000/api/posts',
         postData
       )
       .subscribe((resData) => {
       //  console.log('post to service ' + resData.message);
        // _post.id = resData.postID;
-       const _post:Post = {id:resData.postID,title:post.title,content:post.content}
+       const _post:Post = {id:resData.post.id,title:post.title,content:post.content,imagePath:resData.post.imagePath}
         this.Posts.push(_post);
         this.postsUpdated.next([...this.Posts]);
         this.router.navigate(["/"]);
@@ -79,16 +81,43 @@ export class DatacoordinatorService {
 
   getPost(id: string) {
     return  this.http
-    .get<{_id:string,title:string,content:string}>('http://localhost:3000/api/posts/'+id);
+    .get<{_id:string,title:string,content:string,imagePath:File|string}>('http://localhost:3000/api/posts/'+id);
     //return { ...this.Posts.find((p) => p.id === id) };
   }
 
   updatePost(post: Post) {
-    this.http.put<{message:string}>('http://localhost:3000/api/posts/' + post.id,post).subscribe(resData=>{
+    let postData :Post|FormData;
+    if(typeof(post.imagePath) === 'object'){
+      //if it's a file(obejct) then send formdata
+      postData = new FormData();
+      postData.append("id", post.id);
+      postData.append("title",post.title);
+      postData.append("content",post.content);
+      postData.append("image",post.imagePath);
+    }
+    else{
+      //image is string then send json
+      postData = {
+        id:post.id,
+        title:post.title,
+        content:post.content,
+        imagePath : post.imagePath
+      }
+
+    }
+
+   // console.log('in service : '+ postData.imagePath);
+    this.http.put<{message:string}>('http://localhost:3000/api/posts/' + post.id,postData).subscribe(resData=>{
       console.log(resData);
       const updatedPosts = [...this.Posts];
       const oldPostIndex = updatedPosts.findIndex(p=>p.id===post.id);
-      updatedPosts[oldPostIndex]=post;
+      const _post:Post = {
+        id:post.id,
+        title:post.title,
+        content:post.content,
+        imagePath : ""
+      }
+      updatedPosts[oldPostIndex]=_post;
       this.Posts=updatedPosts;
       this.postsUpdated.next([...this.Posts]);
       this.router.navigate(["/"]);
